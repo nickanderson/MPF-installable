@@ -1,0 +1,3 @@
+#+Title: Installable versions of CFEngine Masterfiles Policy Framework
+
+Base your own repo off of this one and rebase your changes when you want to upgrade.
