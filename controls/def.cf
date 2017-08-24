@@ -157,6 +157,19 @@ bundle common def
 
       "bundlesequence_end" slist => {};
       "bundlesequence_end" slist => getvalues( tbse );
+      # Agent controls
+
+      "control_agent_files_single_copy"
+        slist => { },
+        ifvarclass => not( some( ".*", "control_agent_files_single_copy") ),
+        comment => "Default files_single_copy to an empty list if it is not
+                    defined. It is expected that users can override the default
+                    by setting this value from the augments file (def.json).";
+
+      "control_server_maxconnections"
+        int => "200",
+        ifvarclass => not( isvariable( "control_server_maxconnections" ) );
+
 
     debian::
       "environment_vars"
@@ -196,6 +209,14 @@ bundle common def
       comment => "Define plugins path",
       handle => "common_def_vars_dir_plugins";
 
+      "dir_templates"
+        string => ifelse( isvariable( "def.dir_templates"),
+                          $(def.dir_templates),
+                          "$(sys.workdir)/templates"),
+      comment => "Define templates path",
+      handle => "common_def_vars_dir_templates";
+
+
       "cf_apache_user" string => "cfapache",
       comment => "User that CFEngine Enterprise webserver runs as",
       handle => "common_def_vars_cf_cfapache_user";
@@ -231,6 +252,7 @@ bundle common def
         "$(sys.workdir)/outputs/dc-scripts.log",
         "$(sys.workdir)/state/promise_log.jsonl",
         "$(sys.workdir)/state/classes.jsonl",
+        "/var/log/postgresql.log",
       };
 
       "hub_log_files" slist =>
@@ -241,6 +263,7 @@ bundle common def
 
       "max_client_history_size" -> { "cf-hub", "CFEngine Enterprise" }
         int => "50M",
+        unless => isvariable(max_client_history_size),
         comment => "The threshold of report diffs which will trigger purging of
                     diff files.";
 
@@ -278,6 +301,31 @@ bundle common def
 
     !enable_cfengine_enterprise_hub_ha::
       "policy_servers" slist => {"$(sys.policy_hub)"};
+
+    enterprise_edition.policy_server::
+      "control_hub_exclude_hosts"
+        slist => { "" },
+        unless => isvariable(control_hub_exclude_hosts);
+
+      "mpf_access_rules_collect_calls_admit_ips"
+        slist => { @(def.acl) },
+        unless => isvariable(mpf_access_rules_collect_calls_admit_ips);
+
+    enterprise_edition.client_initiated_reporting_enabled::
+      "control_server_call_collect_interval"
+        string => "5",
+        unless => isvariable(control_server_call_collect_interval);
+
+    enterprise_edition.policy_server::
+      "default_data_select_host_monitoring_include"
+        comment => "Most people have monitoring systems, so instead of collecting data people won't use we save the work unless its requested.",
+        slist => { },
+        unless => isvariable( default_data_select_host_monitoring_include );
+
+      "default_data_select_policy_hub_monitoring_include"
+        comment => "Collect all the monitoring data from the hub itself. It can be useful in diagnostics.",
+        slist => { ".*" },
+        unless => isvariable( default_data_select_policy_hub_monitoring_include );
 
   classes:
 

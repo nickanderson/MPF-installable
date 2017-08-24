@@ -30,10 +30,13 @@ body server control
 
       # Maximum number of concurrent connections.
       # Suggested value >= total number of hosts
-      maxconnections        => "200";
+      maxconnections        => "$(def.control_server_maxconnections)";
 
       # Allow connections from nodes which are out-of-sync
       denybadclocks         => "false";
+
+    enterprise_edition.client_initiated_reporting_enabled::
+      call_collect_interval => "$(def.control_server_call_collect_interval)";
 
     !policy_server::
       allowusers            => { "root" };
@@ -86,6 +89,17 @@ bundle server access_rules()
       handle => "server_access_grant_access_plugins",
       comment => "Grant access to plugins directory",
       admit => { @(def.acl) };
+
+      "$(def.dir_templates)"
+      handle => "server_access_grant_access_templates",
+      shortcut => "templates",
+      comment => "Grant access to templates directory",
+      admit => { @(def.acl) };
+
+      enterprise_edition.policy_server::
+        "collect_calls"
+          resource_type => "query",
+          admit_ips => { @(def.mpf_access_rules_collect_calls_admit_ips) };
 
     !windows::
       "$(def.cf_runagent_shell)"
