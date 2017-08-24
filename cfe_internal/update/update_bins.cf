@@ -55,8 +55,11 @@ bundle agent cfe_internal_bins
       depth_search => u_recurse_basedir("inf"),
       action => u_immediate;
 
-      "/usr/local/sbin/$(agents)"
-      comment => "Create symlinks of CFE binaries in /usr/local/sbin",
+    !coreos::
+      "/usr/local/sbin/$(agents)" -> { "ENT-3046" }
+
+      comment => "Create symlinks of CFE binaries in /usr/local/sbin. But not on
+                  coreos hosts since the fs is read only.",
       handle => canonify("cfe_internal_bins_files_sbin_$(agents)"),
       move_obstructions => "true",
       link_from => u_ln_s("$(sys.workdir)/bin/$(agents)");
@@ -512,6 +515,9 @@ body package_method u_generic(repo)
       package_installed_regex    => ".*"; # all reported are installed
 
       package_file_repositories  => { "$(repo)" };
+      package_version_equal_command => "/usr/bin/dpkg --compare-versions '$(v1)' eq '$(v2)'";
+      package_version_less_command => "/usr/bin/dpkg --compare-versions '$(v1)' lt '$(v2)'";
+
 
     debian.x86_64::
       package_name_convention    => "$(name)_$(version)_amd64.deb";
